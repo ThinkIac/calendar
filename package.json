@@ -1,0 +1,21 @@
+{
+  "name": "calendar",
+  "version": "1.0.0",
+  "description": "Calendar with MCP tools, HTTP routes, and calendar:* events",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "logos": "*"
+  },
+  "manifest": {
+    "name": "Calendar",
+    "iconPreset": { "pack": "lucide", "name": "Calendar" },
+    "color": "#38bdf8",
+    "menu": {
+      "id": "calendar",
+      "label": "Calendar",
+      "target": "left",
+      "view": "Index"
+    }
+  }
+}

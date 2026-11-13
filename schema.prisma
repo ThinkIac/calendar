@@ -1,0 +1,62 @@
+// packages/agenda/schema.prisma
+//
+// ATENÇÃO: os @default() abaixo são documentação, NÃO comportamento. O
+// TableProxy.push() do Scriba não lê `field.default` — campo obrigatório
+// ausente vira "" (String) ou 0 (Int/Boolean/Float). Por isso `status`,
+// `source` e `allDay` são sempre preenchidos explicitamente em JS (ver
+// withDefaults() no index.js); sem isso um evento nasceria com status="" e
+// sumiria de qualquer filtro por status.
+//
+// DateTime é gravado como TEXT ISO-8601 UTC (comparação lexicográfica ==
+// cronológica, então range query funciona direto no SQL) e devolvido na leitura
+// como objeto Date. Todo o banco é UTC; a conversão para fuso local é papel da
+// view / do prompt do createEventFromText.
+
+model Calendar {
+  id    String @id @default(uuid())
+  name  String
+  color String @default("#38bdf8")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  calendarId  String?
+  title       String
+  description String?
+
+  startAt     DateTime
+  endAt       DateTime?
+  allDay      Boolean  @default(false)
+
+  location    String?
+
+  // Recorrência simples: none | daily | weekly | monthly. Só a REGRA é
+  // persistida — as ocorrências são expandidas em memória na consulta
+  // (lib/recurrence.js). Nunca gravar instância de série como linha.
+  recurrence  String?
+  // Fim da série (ISO). Null = sem fim; a expansão é limitada pela janela
+  // consultada e pelo teto de MAX_OCCURRENCES.
+  recurrenceUntil String?
+  // JSON array de ISO — instantes de início de ocorrências puladas. É assim que
+  // "cancelar só esta terça" acontece sem quebrar a série.
+  exdates     String?
+
+  reminderMinutes   Int?
+  // Guardas de idempotência do tick (mesmo desenho do dueNotifiedAt de tasks):
+  // resetadas para null sempre que startAt/reminderMinutes mudam, senão
+  // remarcar um evento nunca mais dispararia lembrete.
+  reminderFiredAt   String?
+  startedNotifiedAt String?
+
+  // Scriba não suporta String[] (isList é sempre false) — tags em CSV, filtro
+  // por $like, como em packages/tasks.
+  tags        String?
+
+  // source/externalId preparam o sync bidirecional (Google/CalDAV) da fase 2.
+  source      String   @default("manual")
+  externalId  String?
+
+  // confirmed | cancelled. Cancelado continua listável (≠ delete, que é soft
+  // delete e some da listagem).
+  status      String   @default("confirmed")
+}

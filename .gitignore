@@ -1,0 +1,5 @@
+.database
+.database-journal
+.logos/
+node_modules/
+.svelte-cache/
